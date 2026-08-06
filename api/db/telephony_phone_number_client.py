@@ -146,7 +146,7 @@ class TelephonyPhoneNumberClient(BaseDBClient):
         misses (e.g. legacy non-E.164 stored addresses); the caller should
         fall back to the fuzzy ``numbers_match`` path in that case.
         """
-        if not (provider and account_id_field and account_id and to_number):
+        if not (provider and to_number):
             return None
 
         normalized = normalize_telephony_address(to_number, country_hint=country_hint)
@@ -161,13 +161,16 @@ class TelephonyPhoneNumberClient(BaseDBClient):
                 )
                 .where(
                     TelephonyConfigurationModel.provider == provider,
-                    TelephonyConfigurationModel.credentials.op("->>")(account_id_field)
-                    == account_id,
                     TelephonyPhoneNumberModel.address_normalized
                     == normalized.canonical,
                     TelephonyPhoneNumberModel.is_active.is_(True),
                 )
             )
+            if account_id_field and account_id:
+                stmt = stmt.where(
+                    TelephonyConfigurationModel.credentials.op("->>")(account_id_field)
+                    == account_id
+                )
             if organization_id is not None:
                 stmt = stmt.where(
                     TelephonyConfigurationModel.organization_id == organization_id

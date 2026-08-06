@@ -44,6 +44,7 @@ from api.services.worker_sync.manager import (
 )
 from api.services.worker_sync.protocol import WorkerSyncEventType
 from api.tasks.arq import get_arq_redis
+import api.services.telephony.providers  # noqa: F401  -- trigger registration
 
 API_PREFIX = "/api/v1"
 
@@ -86,6 +87,12 @@ app = FastAPI(
         {"url": "http://localhost:8000", "description": "Local development"},
     ],
 )
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
 
 
 # Configure CORS.

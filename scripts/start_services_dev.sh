@@ -52,7 +52,7 @@ SERVICE_NAMES=(
 SERVICE_COMMANDS=(
   "python -m api.services.telephony.ari_manager"
   "python -m api.services.campaign.campaign_orchestrator"
-  "uvicorn api.app:app --host 0.0.0.0 --port $UVICORN_BASE_PORT --reload --reload-dir api"
+  "uvicorn api.app:app --host 0.0.0.0 --port $UVICORN_BASE_PORT"
   "python -m arq api.tasks.arq.WorkerSettings --custom-log-dict api.tasks.arq.LOG_CONFIG"
 )
 
@@ -164,8 +164,8 @@ alembic -c "$BASE_DIR/api/alembic.ini" upgrade head
 
 mkdir -p "$BASE_LOG_DIR" "$LOG_DIR"
 
-if [[ -L "$LATEST_LINK" ]]; then
-  rm "$LATEST_LINK"
+if [[ -L "$LATEST_LINK" ]] || [[ -e "$LATEST_LINK" ]]; then
+  rm -rf "$LATEST_LINK"
 fi
 ln -s "$TIMESTAMP" "$LATEST_LINK"
 

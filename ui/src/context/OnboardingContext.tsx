@@ -88,7 +88,7 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
             } else {
                 // Fetch failed: stay in loading so one-time UI stays suppressed
                 // (fail closed — never re-show onboarding to an onboarded user).
-                console.error('[onboarding] failed to fetch onboarding state', res?.error);
+                console.warn('[onboarding] failed to fetch onboarding state', res?.error);
             }
         })();
     }, [auth.loading, auth.isAuthenticated]);
@@ -101,14 +101,14 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
         void updateUserOnboardingStateApiV1UserOnboardingStatePut({ body: update })
             .then((res) => {
                 if (res.error) {
-                    console.error('[onboarding] failed to persist onboarding state', res.error);
+                    console.warn('[onboarding] failed to persist onboarding state', res.error);
                 } else if (res.data) {
                     const data = res.data as Partial<OnboardingState>;
                     setState((prev) => absorb(prev, data));
                 }
             })
             .catch(() => {
-                console.error('[onboarding] failed to persist onboarding state');
+                console.warn('[onboarding] failed to persist onboarding state');
             });
     }, []);
 

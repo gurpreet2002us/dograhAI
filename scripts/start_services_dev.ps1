@@ -64,8 +64,8 @@ if ($IncludeTelephonyWorkers) {
     $serviceSpecs += @{ Name = 'campaign_orchestrator';  Cmd = "python -m api.services.campaign.campaign_orchestrator" }
 }
 
-$serviceSpecs += @{ Name = 'uvicorn'; Cmd = "uvicorn api.app:app --host 0.0.0.0 --port $($env:UVICORN_BASE_PORT) --reload --reload-dir api" }
-$serviceSpecs += @{ Name = 'arq';     Cmd = "python -m arq api.tasks.arq.WorkerSettings --custom-log-dict api.tasks.arq.LOG_CONFIG" }
+$serviceSpecs += @{ Name = 'uvicorn'; Cmd = "python -P -m uvicorn api.app:app --host 0.0.0.0 --port $($env:UVICORN_BASE_PORT) --reload --reload-dir api" }
+$serviceSpecs += @{ Name = 'arq';     Cmd = "python -P -m arq api.tasks.arq.WorkerSettings --custom-log-dict api.tasks.arq.LOG_CONFIG" }
 
 ###############################################################################
 ### 3) Activate virtual environment
@@ -105,7 +105,7 @@ foreach ($spec in $serviceSpecs) {
 ###############################################################################
 
 if (-not $NoMigrations) {
-    alembic -c (Join-Path $BaseDir 'api/alembic.ini') upgrade head
+    python -P -m alembic -c (Join-Path $BaseDir 'api/alembic.ini') upgrade head
 }
 
 ###############################################################################
@@ -143,7 +143,7 @@ Write-Host "Waiting for uvicorn health check at $healthUrl ..."
 $healthy = $false
 for ($attempt = 1; $attempt -le $HealthMaxAttempts; $attempt++) {
     try {
-        $resp = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        $resp = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
         if ($resp.StatusCode -eq 200) {
             Write-Host "OK uvicorn healthy (attempt $attempt)"
             $healthy = $true

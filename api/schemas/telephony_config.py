@@ -40,6 +40,10 @@ from api.services.telephony.providers.vonage.config import (
     VonageConfigurationRequest,
     VonageConfigurationResponse,
 )
+from api.services.telephony.providers.voicelink.config import (
+    VoiceLinkConfigurationRequest,
+    VoiceLinkConfigurationResponse,
+)
 
 # Discriminated union for incoming save requests. Pydantic dispatches on the
 # ``provider`` Literal field of each request class. Replaces the manual
@@ -53,6 +57,7 @@ TelephonyConfigRequest = Annotated[
         TwilioConfigurationRequest,
         VobizConfigurationRequest,
         VonageConfigurationRequest,
+        VoiceLinkConfigurationRequest,
     ],
     Field(discriminator="provider"),
 ]
@@ -66,6 +71,7 @@ class TelephonyConfigurationResponse(BaseModel):
     flat discriminated union.
     """
 
+    voicelink: Optional[VoiceLinkConfigurationResponse] = None
     twilio: Optional[TwilioConfigurationResponse] = None
     plivo: Optional[PlivoConfigurationResponse] = None
     vonage: Optional[VonageConfigurationResponse] = None
@@ -148,4 +154,6 @@ __all__ = [
     "VobizConfigurationResponse",
     "VonageConfigurationRequest",
     "VonageConfigurationResponse",
+    "VoiceLinkConfigurationRequest",
+    "VoiceLinkConfigurationResponse",
 ]

@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - D:/DograhData/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -29,7 +29,7 @@ services:
     command: >
       --requirepass redissecret
     volumes:
-      - redis_data:/data
+      - D:/DograhData/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "redissecret", "ping"]
       interval: 3s
@@ -49,7 +49,7 @@ services:
       - "127.0.0.1:9000:9000" # Bind to localhost explicitly
       - "127.0.0.1:9001:9001"
     volumes:
-      - minio_data:/data
+      - D:/DograhData/minio:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -58,10 +58,7 @@ services:
     networks:
       - app-network
 
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
+# removed named volumes in favor of bind mounts
 
 networks:
   app-network:

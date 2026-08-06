@@ -247,6 +247,7 @@ async def initiate_call(
         keywords = {
             "workflow_id": workflow.id,
             "organization_id": user.selected_organization_id,
+            "user_id": execution_user_id,
         }
 
         # Initiate call via provider

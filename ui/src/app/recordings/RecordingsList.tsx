@@ -45,7 +45,7 @@ export default function RecordingsList({ refreshKey }: { refreshKey?: number }) 
             setRecordings(response.data.recordings);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to fetch recordings");
-            logger.error("Error fetching recordings:", err);
+            logger.warn("Error fetching recordings:", err);
         } finally {
             setIsLoading(false);
         }
@@ -71,7 +71,7 @@ export default function RecordingsList({ refreshKey }: { refreshKey?: number }) 
             fetchRecordings();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to delete recording");
-            logger.error("Error deleting recording:", err);
+            logger.warn("Error deleting recording:", err);
         }
     };
 
