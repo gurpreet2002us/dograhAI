@@ -339,7 +339,7 @@ async def _get_telephony_configuration_name(
     if config_id is None:
         return None
     cfg = await db_client.get_telephony_configuration_for_org(
-        config_id, organization_id
+        config_id, organization_id, active_only=False
     )
     return cfg.name if cfg else None
 
@@ -696,8 +696,8 @@ async def update_campaign(
 @router.get("/{campaign_id}/runs")
 async def get_campaign_runs(
     campaign_id: int,
-    page: int = 1,
-    limit: int = 50,
+    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
+    limit: int = Query(50, ge=1, le=100, description="Number of items per page"),
     filters: Optional[str] = Query(None, description="JSON-encoded filter criteria"),
     sort_by: Optional[str] = Query(
         None, description="Field to sort by (e.g., 'duration', 'created_at')"
