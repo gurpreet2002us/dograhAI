@@ -18,21 +18,21 @@ export function BrandLogo({
   if (mark) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src="/dograh-mark.png" alt="Imagine VOX" className={cn("w-auto select-none", className)} />
+      <img src="/imagine-logo.png" alt="Imagine VOX" className={cn("w-auto select-none bg-white p-1 rounded-md", className)} />
     );
   }
   if (inverse) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src="/dograh-logo-inverse.png" alt="Imagine VOX" className={cn("w-auto select-none", className)} />
+      <img src="/imagine-logo.png" alt="Imagine VOX" className={cn("w-auto select-none bg-white p-1 rounded-md", className)} />
     );
   }
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/dograh-logo.png" alt="Imagine VOX" className={cn("block w-auto select-none dark:hidden", className)} />
+      <img src="/imagine-logo.png" alt="Imagine VOX" className={cn("block w-auto select-none dark:hidden bg-white p-1 rounded-md", className)} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/dograh-logo-inverse.png" alt="Imagine VOX" className={cn("hidden w-auto select-none dark:block", className)} />
+      <img src="/imagine-logo.png" alt="Imagine VOX" className={cn("hidden w-auto select-none dark:block bg-white p-1 rounded-md", className)} />
     </>
   );
 }

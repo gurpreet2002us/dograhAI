@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 # Assign a unique backend port to this git worktree and rewrite the env files
 # that depend on it. Runs automatically as a VS Code "folderOpen" task (see

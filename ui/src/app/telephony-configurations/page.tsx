@@ -157,14 +157,14 @@ export default function TelephonyConfigurationsPage() {
             <p className="text-muted-foreground">
               Connect one or more telephony provider accounts. Each campaign uses one
               configuration; inbound calls are routed to the right one by account ID.{" "}
-              <a
+              {/* <a
                 href="https://docs.dograh.com/integrations/telephony/overview"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-0.5 underline"
               >
                 Learn more <ExternalLink className="h-3 w-3" />
-              </a>
+              </a> */}
             </p>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
