@@ -1,8 +1,8 @@
-import * as LucideIcons from 'lucide-react';
-import { Circle, ExternalLink, type LucideIcon, X } from 'lucide-react';
+import { ExternalLink, type LucideIcon, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 
 import type { NodeSpec } from '@/client/types.gen';
+import { resolveIcon } from '@/components/flow/iconResolver';
 import { useNodeSpecs } from '@/components/flow/renderer';
 import { Button } from '@/components/ui/button';
 
@@ -29,11 +29,6 @@ const SECTIONS: Array<{ title: string; matches: (spec: NodeSpec) => boolean }> =
             spec.category === 'integration' && spec.name !== 'webhook' && spec.name !== 'qa',
     },
 ];
-
-function resolveIcon(name: string): LucideIcon {
-    const icons = LucideIcons as unknown as Record<string, LucideIcon>;
-    return icons[name] ?? Circle;
-}
 
 function NodeSection({
     title,

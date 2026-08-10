@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
     serverSourceMaps: true,
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },
   async rewrites() {
     return [

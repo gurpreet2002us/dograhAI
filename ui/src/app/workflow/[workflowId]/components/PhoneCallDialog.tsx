@@ -259,13 +259,7 @@ export const PhoneCallDialog = ({
             });
 
             if (response.error) {
-                let errMsg = "Failed to initiate call";
-                if (typeof response.error === "string") {
-                    errMsg = response.error;
-                } else if (response.error && typeof response.error === "object") {
-                    errMsg = (response.error as unknown as { detail: string }).detail || JSON.stringify(response.error);
-                }
-                setCallError(errMsg);
+                setCallError(detailFromError(response.error, "Failed to initiate call"));
             } else {
                 const msg = response.data && (response.data as unknown as { message: string }).message || "Call initiated successfully!";
                 setCallSuccessMsg(typeof msg === "string" ? msg : JSON.stringify(msg));

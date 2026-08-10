@@ -1,6 +1,5 @@
 import { NodeProps, NodeToolbar, Position } from "@xyflow/react";
-import * as LucideIcons from "lucide-react";
-import { Check, Circle, Copy, Edit, type LucideIcon, Trash2Icon } from "lucide-react";
+import { Check, Circle, Copy, Edit, FileText, type LucideIcon, Trash2Icon, Wrench } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { toast } from "sonner";
 import { useWorkflow } from "@/app/workflow/[workflowId]/contexts/WorkflowContext";
 import type { NodeSpec } from "@/client/types.gen";
 import { DocumentBadges } from "@/components/flow/DocumentBadges";
+import { resolveIcon } from "@/components/flow/iconResolver";
 import { NodeEditForm, useNodeSpecs } from "@/components/flow/renderer";
 import { ToolBadges } from "@/components/flow/ToolBadges";
 import { FlowNodeData } from "@/components/flow/types";
@@ -68,13 +68,6 @@ const DOC_URL_BY_SPEC: Record<string, string | undefined> = {
     webhook: NODE_DOCUMENTATION_URLS.webhook,
     qa: NODE_DOCUMENTATION_URLS.qaAnalysis,
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
-function resolveIcon(name: string): LucideIcon {
-    const icons = LucideIcons as unknown as Record<string, LucideIcon>;
-    return icons[name] ?? Circle;
-}
 
 function seedValues(
     data: FlowNodeData,
@@ -286,7 +279,7 @@ function CanvasPreview({
             {hasToolRefs && data.tool_uuids && data.tool_uuids.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border/50">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                        <LucideIcons.Wrench className="h-3 w-3" />
+                        <Wrench className="h-3 w-3" />
                         <span>Tools:</span>
                     </div>
                     <ToolBadges
@@ -299,7 +292,7 @@ function CanvasPreview({
             {hasDocRefs && data.document_uuids && data.document_uuids.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border/50">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                        <LucideIcons.FileText className="h-3 w-3" />
+                        <FileText className="h-3 w-3" />
                         <span>Documents:</span>
                     </div>
                     <DocumentBadges
