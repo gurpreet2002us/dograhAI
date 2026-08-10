@@ -46,6 +46,7 @@ services:
       - "6379:6379"
     command: >
       --requirepass ${REDIS_PASSWORD:-redissecret}
+      --stop-writes-on-bgsave-error no
     volumes:
       - ${DOGRAH_DATA_DIR:-./data}/redis:/data
     healthcheck:
