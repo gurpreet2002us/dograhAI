@@ -94,7 +94,10 @@ class VoiceLinkProvider(TelephonyProvider):
                 - did_number: registered DID used as caller id (e.g. 919484959244)
                 - from_numbers: list of DID addresses attached to the config
         """
-        self.api_base = (config.get("api_base") or self.DEFAULT_API_BASE).rstrip("/")
+        api_base = (config.get("api_base") or self.DEFAULT_API_BASE).rstrip("/")
+        if not api_base.endswith("/api") and "voicelink.co.in" in api_base:
+            api_base = f"{api_base}/api"
+        self.api_base = api_base
         self.username = config.get("username")
         self.password = config.get("password")
         self.bearer_token = config.get("bearer_token")
@@ -184,15 +187,27 @@ class VoiceLinkProvider(TelephonyProvider):
         path: str,
         payload: Optional[Dict[str, Any]] = None,
     ) -> Tuple[int, Any]:
-        """Authenticated VoiceLink API request with one 401 re-login retry."""
+        """Authenticated VoiceLink API request with re-login on 401 or HTML responses."""
         token = self._access_token or await self._login()
         url = f"{self.api_base}{path}"
 
         status, data = await self._send_request(method, url, payload, token)
-        if status == 401 and self.username and self.password:
-            logger.info("VoiceLink token rejected (401); re-logging in and retrying")
+        is_html = isinstance(data, dict) and "raw" in data and ("<html" in str(data["raw"]).lower() or "<!doctype" in str(data["raw"]).lower())
+        if (status in (401, 403) or is_html) and self.username and self.password:
+            logger.info("VoiceLink token rejected or returned HTML; re-logging in and retrying")
             token = await self._login()
             status, data = await self._send_request(method, url, payload, token)
+            is_html = isinstance(data, dict) and "raw" in data and ("<html" in str(data["raw"]).lower() or "<!doctype" in str(data["raw"]).lower())
+
+        if is_html:
+            raise HTTPException(
+                status_code=401,
+                detail=(
+                    "VoiceLink API returned a web login page (HTML) instead of JSON. "
+                    "Please check your VoiceLink credentials (Username & Password) "
+                    "or ensure API Base URL is set to https://app.voicelink.co.in/api."
+                ),
+            )
         return status, data
 
     # ======== OUTBOUND CALL ========
