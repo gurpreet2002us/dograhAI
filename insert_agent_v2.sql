@@ -1,4 +1,5 @@
-﻿BEGIN;
+BEGIN;
+DELETE FROM workflow_definitions WHERE workflow_id IN (SELECT id FROM workflows WHERE name = 'DineFlow Sales Agent');
 DELETE FROM workflows WHERE name = 'DineFlow Sales Agent';
 
 WITH new_workflow AS (
