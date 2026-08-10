@@ -31,7 +31,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - D:/DograhData/postgres:/var/lib/postgresql/data
+      - ${DOGRAH_DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -47,7 +47,7 @@ services:
     command: >
       --requirepass ${REDIS_PASSWORD:-redissecret}
     volumes:
-      - D:/DograhData/redis:/data
+      - ${DOGRAH_DATA_DIR:-./data}/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redissecret}", "ping"]
       interval: 3s
@@ -68,7 +68,7 @@ services:
       - "127.0.0.1:9000:9000" # Bind to localhost explicitly
       - "127.0.0.1:9001:9001"
     volumes:
-      - D:/DograhData/minio:/data
+      - ${DOGRAH_DATA_DIR:-./data}/minio:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -95,8 +95,8 @@ services:
       - ./scripts:/workspace/scripts:ro
       - ./deploy:/workspace/deploy:ro
       - ./certs:/certs:ro
-      - D:/DograhData/nginx-generated:/generated/nginx
-      - D:/DograhData/coturn-generated:/generated/coturn
+      - ${DOGRAH_DATA_DIR:-./data}/nginx-generated:/generated/nginx
+      - ${DOGRAH_DATA_DIR:-./data}/coturn-generated:/generated/coturn
     command:
       - /workspace/scripts/run_dograh_init.sh
 
@@ -113,7 +113,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - D:/DograhData/nginx-generated:/etc/nginx/conf.d:ro
+      - ${DOGRAH_DATA_DIR:-./data}/nginx-generated:/etc/nginx/conf.d:ro
       - ./certs:/etc/nginx/certs:ro
     networks:
       - app-network
@@ -133,7 +133,7 @@ services:
       - "5349:5349/tcp"
       - "49152-49200:49152-49200/udp"
     volumes:
-      - D:/DograhData/coturn-generated:/etc/coturn:ro
+      - ${DOGRAH_DATA_DIR:-./data}/coturn-generated:/etc/coturn:ro
     command:
       - -c
       - /etc/coturn/turnserver.conf
