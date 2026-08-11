@@ -111,6 +111,9 @@ class CSVSyncService(CampaignSourceSyncService):
                 }
             )
 
+        # Purge existing unprocessed queued runs for this campaign before re-populating
+        await db_client.delete_queued_runs_for_campaign(campaign_id, states=["queued"])
+
         # Bulk insert
         if queued_runs:
             await db_client.bulk_create_queued_runs(queued_runs)

@@ -10755,6 +10755,38 @@ export type DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponses = {
     200: unknown;
 };
 
+export type DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponse = DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponses[keyof DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponses];
+
+export type DeleteCampaignApiV1CampaignCampaignIdDeleteData = {
+    body?: never;
+    headers?: {
+        authorization?: string | null;
+        'X-API-Key'?: string | null;
+    };
+    path: {
+        campaign_id: number;
+    };
+    query?: never;
+    url: '/api/v1/campaign/{campaign_id}';
+};
+
+export type DeleteCampaignApiV1CampaignCampaignIdDeleteErrors = {
+    400: HttpValidationError;
+    404: unknown;
+    422: HttpValidationError;
+};
+
+export type DeleteCampaignApiV1CampaignCampaignIdDeleteError = DeleteCampaignApiV1CampaignCampaignIdDeleteErrors[keyof DeleteCampaignApiV1CampaignCampaignIdDeleteErrors];
+
+export type DeleteCampaignApiV1CampaignCampaignIdDeleteResponses = {
+    200: {
+        message: string;
+        id: number;
+    };
+};
+
+export type DeleteCampaignApiV1CampaignCampaignIdDeleteResponse = DeleteCampaignApiV1CampaignCampaignIdDeleteResponses[keyof DeleteCampaignApiV1CampaignCampaignIdDeleteResponses];
+
 export type ListCredentialsApiV1CredentialsGetData = {
     body?: never;
     headers?: {

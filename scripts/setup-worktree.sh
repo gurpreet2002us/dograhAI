@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/unusr/bin/env bash
 # Environment setup for a git worktree: pipecat submodule, isolated venv,
 # Python --dev deps, and ui/node_modules. A fresh worktree is just a source
 # checkout, so it has none of these; this provisions an ISOLATED environment

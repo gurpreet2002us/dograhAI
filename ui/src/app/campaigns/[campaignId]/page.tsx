@@ -1,12 +1,13 @@
 "use client";
 
 import { format } from 'date-fns';
-import { AlertCircle, AlertTriangle, ArrowLeft, CalendarIcon, Check, Clock, Download, Info, Pause, Pencil, Phone, Play, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowLeft, CalendarIcon, Check, Clock, Download, Info, Pause, Pencil, Phone, Play, RefreshCw, Trash2, X } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
+    deleteCampaignApiV1CampaignCampaignIdDelete,
     downloadCampaignReportApiV1CampaignCampaignIdReportGet,
     getCampaignApiV1CampaignCampaignIdGet,
     getCampaignSourceDownloadUrlApiV1CampaignCampaignIdSourceDownloadUrlGet,
@@ -16,7 +17,18 @@ import {
     startCampaignApiV1CampaignCampaignIdStartPost,
 } from '@/client/sdk.gen';
 import type { CampaignResponse } from '@/client/types.gen';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +80,46 @@ export default function CampaignDetailPage() {
     const [redialOnNoAnswer, setRedialOnNoAnswer] = useState(true);
     const [redialOnBusy, setRedialOnBusy] = useState(true);
     const [isRedialing, setIsRedialing] = useState(false);
+
+    // Delete dialog state
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteCampaign = async () => {
+        if (!user || !campaign) return;
+        setIsDeleting(true);
+        try {
+            const accessToken = await getAccessToken();
+            const response = await deleteCampaignApiV1CampaignCampaignIdDelete({
+                path: {
+                    campaign_id: campaignId,
+                },
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            if (response.data) {
+                toast.success('Campaign deleted successfully');
+                router.push('/campaigns');
+            } else if (response.error) {
+                let errorMsg = 'Failed to delete campaign';
+                if (typeof response.error === 'string') {
+                    errorMsg = response.error;
+                } else if (response.error && typeof response.error === 'object') {
+                    errorMsg = (response.error as unknown as { detail?: string }).detail || JSON.stringify(response.error);
+                }
+                toast.error(errorMsg);
+            }
+        } catch (error) {
+            console.error('Failed to delete campaign:', error);
+            toast.error('Failed to delete campaign');
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteDialogOpen(false);
+        }
+    };
+
 
     // Fetch campaign details
     const fetchCampaign = useCallback(async () => {
@@ -587,9 +639,20 @@ export default function CampaignDetailPage() {
                                 </PopoverContent>
                             </Popover>
                             {renderActionButton()}
+                            <Button
+                                variant="outline"
+                                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => setIsDeleteDialogOpen(true)}
+                                disabled={campaign.state === 'running'}
+                                title={campaign.state === 'running' ? 'Pause campaign before deleting' : 'Delete campaign'}
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                            </Button>
                         </div>
                     </div>
                 </div>
+
 
                 {/* Campaign Details */}
                 <Card className="mb-6">
@@ -951,6 +1014,28 @@ export default function CampaignDetailPage() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure you want to delete this campaign?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete campaign &quot;{campaign?.name}&quot; (ID #{campaign?.id}) and all its queued runs. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDeleteCampaign}
+                                disabled={isDeleting}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete Campaign'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
         </div>
     );
 }
+

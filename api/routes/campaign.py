@@ -166,6 +166,8 @@ class CreateCampaignRequest(BaseModel):
 
 class UpdateCampaignRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
+    source_type: Optional[str] = Field(None, pattern="^csv$")
+    source_id: Optional[str] = None
     retry_config: Optional[RetryConfigRequest] = None
     max_concurrency: Optional[int] = Field(default=None, ge=1, le=100)
     schedule_config: Optional[ScheduleConfigRequest] = None
@@ -649,6 +651,21 @@ async def update_campaign(
     if request.name is not None:
         update_kwargs["name"] = request.name
 
+    if request.source_type is not None:
+        update_kwargs["source_type"] = request.source_type
+
+    if request.source_id is not None:
+        target_source_type = request.source_type or campaign.source_type
+        sync_service = get_sync_service(target_source_type)
+        validation_result = await sync_service.validate_source(
+            request.source_id, user.selected_organization_id
+        )
+        if not validation_result.is_valid:
+            raise HTTPException(
+                status_code=400, detail=validation_result.error.message
+            )
+        update_kwargs["source_id"] = request.source_id
+
     if request.retry_config is not None:
         update_kwargs["retry_config"] = request.retry_config.model_dump()
 
@@ -673,6 +690,22 @@ async def update_campaign(
 
     if update_kwargs:
         await db_client.update_campaign(campaign_id=campaign_id, **update_kwargs)
+
+    # Re-sync source contacts if source_id was updated
+    if request.source_id is not None:
+        target_source_type = request.source_type or campaign.source_type
+        sync_service = get_sync_service(target_source_type)
+        try:
+            rows_synced = await sync_service.sync_source_data(campaign_id)
+            from loguru import logger
+            logger.info(
+                f"Re-synced source data for campaign {campaign_id}, total rows: {rows_synced}"
+            )
+        except Exception as e:
+            from loguru import logger
+            logger.error(
+                f"Failed to re-sync source data for campaign {campaign_id}: {e}"
+            )
 
     # Re-fetch to return updated data
     campaign = await db_client.get_campaign(campaign_id, user.selected_organization_id)
@@ -1017,3 +1050,32 @@ async def download_campaign_report(
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.delete("/{campaign_id}")
+async def delete_campaign(
+    campaign_id: int,
+    user: UserModel = Depends(get_user),
+) -> Dict[str, Any]:
+    """Delete a campaign and its queued runs."""
+    campaign = await db_client.get_campaign(campaign_id, user.selected_organization_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    if campaign.state == "running":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete a running campaign. Please pause or stop it first.",
+        )
+
+    try:
+        deleted = await db_client.delete_campaign(
+            campaign_id, user.selected_organization_id
+        )
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"message": "Campaign deleted successfully", "id": campaign_id}
+

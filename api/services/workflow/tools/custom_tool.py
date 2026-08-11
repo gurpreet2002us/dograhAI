@@ -426,7 +426,9 @@ async def execute_http_tool(
     logger.debug(f"Request body: {body}, params: {params}")
 
     try:
-        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+        async with httpx.AsyncClient(
+            timeout=timeout_seconds, follow_redirects=True
+        ) as client:
             response = await client.request(
                 method=method,
                 url=url,

@@ -786,6 +786,14 @@ export const getCampaignSourceDownloadUrlApiV1CampaignCampaignIdSourceDownloadUr
 export const downloadCampaignReportApiV1CampaignCampaignIdReportGet = <ThrowOnError extends boolean = false>(options: Options<DownloadCampaignReportApiV1CampaignCampaignIdReportGetData, ThrowOnError>): RequestResult<DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponses, DownloadCampaignReportApiV1CampaignCampaignIdReportGetErrors, ThrowOnError> => (options.client ?? client).get<DownloadCampaignReportApiV1CampaignCampaignIdReportGetResponses, DownloadCampaignReportApiV1CampaignCampaignIdReportGetErrors, ThrowOnError>({ url: '/api/v1/campaign/{campaign_id}/report', ...options });
 
 /**
+ * Delete Campaign
+ *
+ * Delete campaign and its queued runs
+ */
+export const deleteCampaignApiV1CampaignCampaignIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteCampaignApiV1CampaignCampaignIdDeleteData, ThrowOnError>): RequestResult<DeleteCampaignApiV1CampaignCampaignIdDeleteResponses, DeleteCampaignApiV1CampaignCampaignIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCampaignApiV1CampaignCampaignIdDeleteResponses, DeleteCampaignApiV1CampaignCampaignIdDeleteErrors, ThrowOnError>({ url: '/api/v1/campaign/{campaign_id}', ...options });
+
+
+/**
  * List Credentials
  *
  * List all webhook credentials for the user's organization.

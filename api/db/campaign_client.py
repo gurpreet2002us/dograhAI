@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import func, text, update
+from sqlalchemy import delete, func, text, update
 from sqlalchemy.future import select
 
 from api.db.base_client import BaseDBClient
@@ -517,6 +517,24 @@ class CampaignClient(BaseDBClient):
                 raise
 
     # QueuedRun methods
+    async def delete_queued_runs_for_campaign(
+        self, campaign_id: int, states: Optional[list[str]] = None
+    ) -> int:
+        """Delete queued runs for a campaign, optionally filtered by state (e.g. ['queued'])"""
+        async with self.async_session() as session:
+            stmt = delete(QueuedRunModel).where(
+                QueuedRunModel.campaign_id == campaign_id
+            )
+            if states:
+                stmt = stmt.where(QueuedRunModel.state.in_(states))
+            result = await session.execute(stmt)
+            try:
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise e
+            return result.rowcount or 0
+
     async def bulk_create_queued_runs(self, queued_runs_data: list[dict]) -> None:
         """Bulk create queued runs"""
         async with self.async_session() as session:
@@ -850,3 +868,40 @@ class CampaignClient(BaseDBClient):
                 await session.refresh(run)
 
             return claimed_runs
+
+    async def delete_campaign(
+        self,
+        campaign_id: int,
+        organization_id: int,
+    ) -> bool:
+        """Delete campaign by ID for an organization after unlinking runs."""
+        async with self.async_session() as session:
+            campaign_query = select(CampaignModel).where(
+                CampaignModel.id == campaign_id,
+                CampaignModel.organization_id == organization_id,
+            )
+            campaign_result = await session.execute(campaign_query)
+            campaign = campaign_result.scalar_one_or_none()
+
+            if not campaign:
+                return False
+
+            if campaign.state == "running":
+                raise ValueError("Cannot delete a running campaign. Please pause it first.")
+
+            # Unlink workflow_runs associated with this campaign
+            await session.execute(
+                update(WorkflowRunModel)
+                .where(WorkflowRunModel.campaign_id == campaign_id)
+                .values(campaign_id=None)
+            )
+
+            # Delete campaign (queued_runs will cascade delete via FK constraint)
+            await session.delete(campaign)
+            try:
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                raise e
+            return True
+
