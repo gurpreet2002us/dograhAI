@@ -634,7 +634,7 @@ async def update_campaign(
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
-    if campaign.state in ["completed", "failed"]:
+    if campaign.state in ["running", "completed", "failed"]:
         raise HTTPException(
             status_code=400,
             detail=f"Cannot update a {campaign.state} campaign",

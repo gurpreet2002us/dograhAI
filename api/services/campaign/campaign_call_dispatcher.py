@@ -261,11 +261,14 @@ class CampaignCallDispatcher:
             from_number = await self.acquire_from_number(
                 campaign.organization_id,
                 telephony_configuration_id=campaign.telephony_configuration_id,
+                timeout=5.0,
             )
             if from_number is None:
-                raise PhoneNumberPoolExhaustedError(
-                    organization_id=campaign.organization_id
-                )
+                from_number = provider.select_from_number()
+                if from_number is None:
+                    raise PhoneNumberPoolExhaustedError(
+                        organization_id=campaign.organization_id
+                    )
 
             logger.info(f"Provider name: {provider.PROVIDER_NAME}")
             logger.info(f"Queued run context: {queued_run.context_variables}")
@@ -511,7 +514,7 @@ class CampaignCallDispatcher:
         self,
         organization_id: int,
         telephony_configuration_id: int | None,
-        timeout: float = 600,
+        timeout: float = 5.0,
     ) -> Optional[str]:
         """
         Acquire a from_number from the (org, telephony config) pool with retry.

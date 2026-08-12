@@ -22,9 +22,13 @@ class CampaignRunnerService:
         if not campaign:
             raise ValueError(f"Campaign {campaign_id} not found")
 
-        if campaign.state != "created":
+        if campaign.state == "paused":
+            await self.resume_campaign(campaign_id)
+            return
+
+        if campaign.state not in ["created", "syncing"]:
             raise ValueError(
-                f"Campaign must be in 'created' state to start, current state: {campaign.state}"
+                f"Campaign must be in 'created' or 'paused' state to start, current state: {campaign.state}"
             )
 
         # Redial campaigns have queued_runs pre-seeded from the parent campaign,
@@ -61,6 +65,17 @@ class CampaignRunnerService:
         # Enqueue the sync task
         await enqueue_job(FunctionNames.SYNC_CAMPAIGN_SOURCE, campaign_id)
 
+        # Trigger direct sync task as fallback to ensure immediate processing
+        try:
+            import asyncio
+            from api.tasks.campaign_tasks import sync_campaign_source, process_campaign_batch
+            async def run_sync_and_dispatch():
+                await sync_campaign_source({}, campaign_id)
+                await process_campaign_batch({}, campaign_id)
+            asyncio.create_task(run_sync_and_dispatch())
+        except Exception as e:
+            logger.warning(f"Direct sync execution warning: {e}")
+
         logger.info(f"Campaign {campaign_id} started, syncing source data")
 
     async def pause_campaign(self, campaign_id: int) -> None:
@@ -90,12 +105,19 @@ class CampaignRunnerService:
                 f"Campaign must be in 'paused' state to resume, current state: {campaign.state}"
             )
 
-        # Update state to running. Do not queue batch since campaign orchestrator's
-        # stale campaign checker would do that if there are pending work.
+        # Update state to running.
         await db_client.update_campaign(campaign_id=campaign_id, state="running")
 
         # Reset circuit breaker so the resumed campaign starts with a clean slate
         await circuit_breaker.reset(campaign_id)
+
+        # Trigger immediate batch dispatch on resume
+        try:
+            import asyncio
+            from api.tasks.campaign_tasks import process_campaign_batch
+            asyncio.create_task(process_campaign_batch({}, campaign_id))
+        except Exception as e:
+            logger.warning(f"Direct batch dispatch warning on resume: {e}")
 
         logger.info(f"Campaign {campaign_id} resumed")
 

@@ -889,11 +889,24 @@ class CampaignClient(BaseDBClient):
             if campaign.state == "running":
                 raise ValueError("Cannot delete a running campaign. Please pause it first.")
 
-            # Unlink workflow_runs associated with this campaign
+            # Unlink workflow_runs associated with this campaign or its queued runs
+            queued_run_ids_subquery = select(QueuedRunModel.id).where(
+                QueuedRunModel.campaign_id == campaign_id
+            )
             await session.execute(
                 update(WorkflowRunModel)
-                .where(WorkflowRunModel.campaign_id == campaign_id)
-                .values(campaign_id=None)
+                .where(
+                    (WorkflowRunModel.campaign_id == campaign_id)
+                    | (WorkflowRunModel.queued_run_id.in_(queued_run_ids_subquery))
+                )
+                .values(campaign_id=None, queued_run_id=None)
+            )
+
+            # Clear parent_queued_run_id on queued runs before cascade delete
+            await session.execute(
+                update(QueuedRunModel)
+                .where(QueuedRunModel.campaign_id == campaign_id)
+                .values(parent_queued_run_id=None)
             )
 
             # Delete campaign (queued_runs will cascade delete via FK constraint)
