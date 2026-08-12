@@ -184,6 +184,19 @@ class CampaignCallDispatcher:
                         state="failed",
                         processed_at=datetime.now(UTC),
                     )
+                    curr_campaign = await db_client.get_campaign_by_id(campaign_id)
+                    if curr_campaign:
+                        await db_client.update_campaign(
+                            campaign_id=campaign_id,
+                            failed_rows=curr_campaign.failed_rows + 1,
+                        )
+                        await db_client.append_campaign_log(
+                            campaign_id=campaign_id,
+                            level="error",
+                            event="queued_run_dispatch_failed",
+                            message=f"Failed to dispatch call for queued run {queued_run.id}: {e}",
+                            details={"queued_run_id": queued_run.id, "error": str(e)},
+                        )
                     logger.info(
                         f"Marked queued run {queued_run.id} as failed due to error: {e}"
                     )
@@ -191,6 +204,22 @@ class CampaignCallDispatcher:
                     logger.error(
                         f"Failed to mark queued run {queued_run.id} as failed: {update_error}"
                     )
+
+        # Check if all queued runs for this campaign are finished
+        try:
+            pending_count = await db_client.count_queued_runs(campaign_id, state="queued")
+            processing_count = await db_client.count_queued_runs(campaign_id, state="processing")
+            if pending_count == 0 and processing_count == 0:
+                latest_campaign = await db_client.get_campaign_by_id(campaign_id)
+                if latest_campaign and latest_campaign.state == "running":
+                    await db_client.update_campaign(
+                        campaign_id=campaign_id,
+                        state="completed",
+                        completed_at=datetime.now(UTC),
+                    )
+                    logger.info(f"Campaign {campaign_id} has no pending or processing runs; marked as completed")
+        except Exception as check_err:
+            logger.warning(f"Failed to check campaign completion for {campaign_id}: {check_err}")
 
         return processed_count
 
