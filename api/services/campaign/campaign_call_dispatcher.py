@@ -403,6 +403,7 @@ class CampaignCallDispatcher:
                 workflow_run_id=workflow_run.id,
                 from_number=from_number,
                 workflow_id=campaign.workflow_id,
+                user_id=campaign.created_by or workflow_run.user_id,
                 organization_id=campaign.organization_id,
             )
 

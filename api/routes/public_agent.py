@@ -335,6 +335,7 @@ async def _execute_resolved_target(
             webhook_url=webhook_url,
             workflow_run_id=workflow_run.id,
             workflow_id=target.workflow.id,
+            user_id=execution_user_id,
             organization_id=target.organization_id,
         )
     except Exception as e:

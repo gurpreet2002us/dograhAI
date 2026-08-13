@@ -237,6 +237,12 @@ class VoiceLinkProvider(TelephonyProvider):
 
         workflow_id = kwargs.get("workflow_id")
         user_id = kwargs.get("user_id")
+        if user_id is None and workflow_id:
+            from api.db import db_client
+            workflow = await db_client.get_workflow_by_id(workflow_id)
+            if workflow:
+                user_id = workflow.user_id
+
         if workflow_id is None or user_id is None or workflow_run_id is None:
             raise ValueError(
                 "VoiceLink initiate_call requires workflow_id, user_id and "
