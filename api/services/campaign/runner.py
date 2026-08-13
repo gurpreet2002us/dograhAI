@@ -26,9 +26,17 @@ class CampaignRunnerService:
             await self.resume_campaign(campaign_id)
             return
 
+        if campaign.state == "completed":
+            await db_client.update_campaign(
+                campaign_id=campaign_id,
+                state="created",
+                processed_rows=0,
+            )
+            campaign = await db_client.get_campaign_by_id(campaign_id)
+
         if campaign.state not in ["created", "syncing"]:
             raise ValueError(
-                f"Campaign must be in 'created', 'syncing', or 'paused' state to start, current state: {campaign.state}"
+                f"Campaign must be in 'created', 'syncing', 'paused', or 'completed' state to start, current state: {campaign.state}"
             )
 
         # Redial campaigns have queued_runs pre-seeded from the parent campaign,

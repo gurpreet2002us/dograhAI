@@ -634,19 +634,18 @@ async def update_campaign(
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
-    if campaign.state in ["running", "completed", "failed"]:
+    if campaign.state == "running":
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot update a {campaign.state} campaign",
-        )
-
-    if request.max_concurrency is not None:
-        await _validate_max_concurrency(
-            request.max_concurrency, user.selected_organization_id
+            detail="Cannot update a campaign while it is actively running. Please pause it first.",
         )
 
     # Build update kwargs
     update_kwargs = {}
+
+    if campaign.state in ["completed", "failed"]:
+        update_kwargs["state"] = "created"
+        update_kwargs["processed_rows"] = 0
 
     if request.name is not None:
         update_kwargs["name"] = request.name
