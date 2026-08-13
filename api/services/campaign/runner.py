@@ -28,7 +28,7 @@ class CampaignRunnerService:
 
         if campaign.state not in ["created", "syncing"]:
             raise ValueError(
-                f"Campaign must be in 'created' or 'paused' state to start, current state: {campaign.state}"
+                f"Campaign must be in 'created', 'syncing', or 'paused' state to start, current state: {campaign.state}"
             )
 
         # Redial campaigns have queued_runs pre-seeded from the parent campaign,
@@ -51,6 +51,12 @@ class CampaignRunnerService:
                 source_type=campaign.source_type,
                 source_id=campaign.source_id,
             )
+            try:
+                import asyncio
+                from api.tasks.campaign_tasks import process_campaign_batch
+                asyncio.create_task(process_campaign_batch({}, campaign_id))
+            except Exception as e:
+                logger.warning(f"Direct batch dispatch warning: {e}")
             logger.info(f"Redial campaign {campaign_id} started, source sync skipped")
             return
 
@@ -62,21 +68,22 @@ class CampaignRunnerService:
             source_sync_status="in_progress",
         )
 
-        # Enqueue the sync task
+        # Enqueue the sync task for background workers if present
         await enqueue_job(FunctionNames.SYNC_CAMPAIGN_SOURCE, campaign_id)
 
-        # Trigger direct sync task as fallback to ensure immediate processing
+        # Perform source sync synchronously inline to ensure source data is populated
+        # and state transitions to 'running' before returning response
+        from api.tasks.campaign_tasks import sync_campaign_source, process_campaign_batch
+        await sync_campaign_source({}, campaign_id)
+
+        # Trigger immediate batch dispatch in background task
         try:
             import asyncio
-            from api.tasks.campaign_tasks import sync_campaign_source, process_campaign_batch
-            async def run_sync_and_dispatch():
-                await sync_campaign_source({}, campaign_id)
-                await process_campaign_batch({}, campaign_id)
-            asyncio.create_task(run_sync_and_dispatch())
+            asyncio.create_task(process_campaign_batch({}, campaign_id))
         except Exception as e:
-            logger.warning(f"Direct sync execution warning: {e}")
+            logger.warning(f"Direct batch dispatch warning: {e}")
 
-        logger.info(f"Campaign {campaign_id} started, syncing source data")
+        logger.info(f"Campaign {campaign_id} started, source synced and batch processing initiated")
 
     async def pause_campaign(self, campaign_id: int) -> None:
         """Pauses active campaign processing"""
